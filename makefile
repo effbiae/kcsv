@@ -30,16 +30,22 @@ endif
 
 C=$(CC) $(CFLAGS) -g $W
 
+SRC=*.c *.h makefile
+
 all: test
 
-so: *.c *.h
+libcsv.so: $(SRC)
 	$C -olibcsv.so ???.c -lm $A -lpthread -shared -fPIC # -undefined dynamic_lookup
 	ls -la libcsv.so
 
-test: so makefile *.c *.h
+csv: libcsv.so $(SRC)
 	$C -ocsv main.c -L. -lcsv $A
-	echo col>test;echo 123>>test
-	LD_LIBRARY_PATH=. ./csv test "|i" i
+
+test: csv libcsv.so $(SRC)
 	LD_LIBRARY_PATH=. ./csv EQY_US_ALL_TRADE_20201210 "|QsssifsgijssQQb" taq
+
+ii: csv libcsv.so $(SRC)
+	echo col1,col2>ii.csv;echo 123,456>>ii.csv
+	LD_LIBRARY_PATH=. ./csv ii.csv ",ii" ii
 
 #:~

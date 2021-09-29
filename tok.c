@@ -10,6 +10,8 @@
 Zin U _readn(I d,S b,U n){U r=0;J e;W(n){e=read(d,b,n);P(e<0,O("!read d=%d b=%p u=%d %d %s\n",d,b,n,e,strerror(errno)),exit(1),0)P(!e,r)b+=e,n-=(U)e,r+=(U)e;};R r;}
 Zin U readn(I d,S b,U n,CSV*c){BENCH();U r=0;WALL(r=_readn(d,b,n))R c->rbytes+=r,c->rtime+=wall,r;}
 
+#if !defined NOAVX && !defined SIMPLE_TOK
+
 #define SHR(m) m^=*in_q,*in_q=((J)(m))>>63,m //assumes shr(J) well-defined
 #ifdef __ARM_NEON
 Zin U cmi(span z,G m){vec vm=vset1(m);R mmask(cmpeq(z.i0,vm),cmpeq(z.i1,vm),cmpeq(z.i2,vm),cmpeq(z.i3,vm));}
@@ -24,8 +26,6 @@ Zin IT zip(IT*p,IT ba,IT idx,U b){P(!b,ba)IT n=ham(b);N(8,z(i))Z(n>8,N(8,z(i+8))
 
 #define mask(dest) qt_mask=r->quo?fqm(in,&in_qt):0,sep=cmi(in,r->sep),trm=cmi(in,'\n');dest=(trm|sep)&~qt_mask;  //!< nocrlf
 //#define mask(dest) qt_mask=r->quo?fqm(in,&in_qt):0,sep=cmi(in,r->sep);U cr=cmi(in,0x0d),cr_adj=(cr<<1)|prev_iter_cr_end,lf=cmi(in,0x0a);trm=lf&cr_adj;prev_iter_cr_end=cr>>63;dest=(trm|sep)&~qt_mask;
-
-#ifndef NOAVX
 
 /*
 _ seed(CSV*r){
@@ -79,8 +79,26 @@ U tok(CSV*r){span in;U intl_idx,sep,trm,qt_mask,f_sep,idx=0,base=0,in_qt=0,prev_
 
  R r->n=base;}
 
-#else
-U csv(CSV*r){r->n=0;G q=0;VN(n,S(s[i],C('"',Z(q&&s[i+1]=='"',i++)q=!q)case',':C('\n',Z(!q,r->i[r->n++]=1+i))))R r->n;}
+#else // use a FILE* to read all the pipe
+Zin C pushc(CSV*r,C c){R r->b=realloc(r->b,             ++r->bn),r->b[r->bn-1]=c;}
+Zin U pushi(CSV*r){    R r->i=realloc(r->i,sizeof(r->i)*++r->n ),r->i[r->n-1 ]=r->bn;}
+U tok(CSV*r){
+ r->more=0;   // tok() reads all input, is called only once
+ FILE*f=fdopen(r->d,"r");I c=0;
+ W(EOF!=(c=getc(f)))Z(c==r->sep||c=='\n',pushc(r,0),pushi(r))pushc(r,c);
+ R r->n;
+}
+/*
+Zin I peek(FILE*f){R ungetc(f,getc(f));}
+Z(q,c-'"'? 
+            pushc(r,c)        // quoting and c is not ", so push it
+           :peek(f)-'"'
+            ?
+             q=0              // end quote
+            :pushc(r,getc(f)) // quoting and have double "", so push the second "
+
+   );
+*/
 #endif
 
 //:~

@@ -14,7 +14,7 @@ endif
 ifeq      ($(shell gcc   -v 2>&1|grep -o 'gcc version 10'),gcc version 10)
  CC=gcc
  W=-fmax-errors=1 -flax-vector-conversions
-else ifeq ($(shell clang -v 2>&1|grep -o 'clang' ),clang)
+else ifeq ($(shell clang -v 2>&1|grep -o 'clang version' ),clang version)
  CC=clang
  W=-ferror-limit=1 -Wno-visibility -Wno-shift-op-parentheses
 else
@@ -22,8 +22,13 @@ else
 endif
 W:=$W -Wno-unused-value -Wno-int-conversion -Wno-parentheses -w
 
+ifeq ($(shell uname),Linux)
+ ifeq ($(shell grep avx2 /proc/cpuinfo),)
+  CFLAGS:=$(CFLAGS) -DSIMPLE_TOK
+ endif
+endif
 
-C=$(CC) -O3 -g $W
+C=$(CC) $(CFLAGS) -g $W
 
 all: test
 
@@ -33,6 +38,8 @@ so: *.c *.h
 
 test: so makefile *.c *.h
 	$C -ocsv main.c -L. -lcsv $A
+	echo col>test;echo 123>>test
+	LD_LIBRARY_PATH=. ./csv test "|i" i
 	LD_LIBRARY_PATH=. ./csv EQY_US_ALL_TRADE_20201210 "|QsssifsgijssQQb" taq
 
 #:~

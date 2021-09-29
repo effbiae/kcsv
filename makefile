@@ -45,7 +45,7 @@ test: csv libcsv.so $(SRC)
 	LD_LIBRARY_PATH=. ./csv EQY_US_ALL_TRADE_20201210 "|QsssifsgijssQQb" taq
 
 ii: csv libcsv.so $(SRC)
-	echo col1,col2>ii.csv;echo 123,456>>ii.csv
+	printf 'a,b\n1,2\n'>ii.csv
 	LD_LIBRARY_PATH=. ./csv ii.csv ",ii" ii
 
 #:~

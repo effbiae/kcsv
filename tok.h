@@ -28,11 +28,12 @@ typedef __m128i vec;typedef struct span{vec i0,i1,i2,i3;}span;
 #define vload _mm_loadu_si128
 #define cmpeq _mm_cmpeq_epi8
 #define vset1 _mm_set1_epi8
-Zin U mmask(span p){R (U)_mm_movemask_epi8(p.i0)|((U)_mm_movemask_epi8(p.i1)<<16)|((U)_mm_movemask_epi8(p.i2)<<32)|((U)_mm_movemask_epi8(p.i3)<<48);}
+Zin U mmask(span p){R (U)(UI)_mm_movemask_epi8(p.i0)     |((U)(UI)_mm_movemask_epi8(p.i1)<<16)\
+                    |((U)(UI)_mm_movemask_epi8(p.i2)<<32)|((U)(UI)_mm_movemask_epi8(p.i3)<<48);}
 #else
 typedef __m256i vec;typedef struct span{vec l;vec h;}span;
 #define vld(p)(span){vload(p),vload(p+32)}
-Zin U mmask(span z){U x=(UI)_mm256_movemask_epi8(cmpeq(b,z.l)),y=_mm256_movemask_epi8(cmpeq(b,z.h));R(y<<32)|x;}
+Zin U mmask(span z){U x=(UI)_mm256_movemask_epi8(cmpeq(b,z.l)),y=(UI)_mm256_movemask_epi8(cmpeq(b,z.h));R(y<<32)|x;}
 #define vload _mm256_loadu_si256
 #define cmpeq _mm256_cmpeq_epi8
 #define vset1 _mm256_set1_epi8

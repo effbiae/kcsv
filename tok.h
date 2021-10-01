@@ -19,14 +19,24 @@ typedef struct CSV{
 
 #ifndef __ARM_NEON
 #include<x86intrin.h>
+typedef __m128i v128;
 #define aV(a...) ((v128){a})
-typedef __m256i vec;typedef __m128i v128;typedef struct span{vec l;vec h;}span;
+#define vmull_negone(x) _mm_clmulepi64_si128(aV(x,0),aV(-1ULL),0)[0]
+#ifndef __AVX2__
+typedef __m128i vec;typedef struct span{vec i0,i1,i2,i3;}span;
+#define vld(p)(span){vload(p),vload(p+16),vload(p+32),vload(p+48)}
+#define vload _mm_loadu_si128
+#define cmpeq _mm_cmpeq_epi8
+#define vset1 _mm_set1_epi8
+Zin U mmask(span p){R (U)_mm_movemask_epi8(p.i0)|((U)_mm_movemask_epi8(p.i1)<<16)|((U)_mm_movemask_epi8(p.i2)<<32)|((U)_mm_movemask_epi8(p.i3)<<48);}
+#else
+typedef __m256i vec;typedef struct span{vec l;vec h;}span;
 #define vld(p)(span){vload(p),vload(p+32)}
-#define mmask _mm256_movemask_epi8
+Zin U mmask(span z){U x=(UI)_mm256_movemask_epi8(cmpeq(b,z.l)),y=_mm256_movemask_epi8(cmpeq(b,z.h));R(y<<32)|x;}
 #define vload _mm256_loadu_si256
 #define cmpeq _mm256_cmpeq_epi8
 #define vset1 _mm256_set1_epi8
-#define vmull _mm_clmulepi64_si128
+#endif
 #else
 #include<arm_neon.h>
 typedef uint8x16_t vec;typedef struct span{vec i0;vec i1;vec i2;vec i3;}span;
@@ -34,10 +44,10 @@ typedef uint8x16_t vec;typedef struct span{vec i0;vec i1;vec i2;vec i3;}span;
 #define vload vld1q_u8
 #define cmpeq vceqq_u8
 #define vset1 vmovq_n_u8
-#define vmull vmull_p64
-Zin U mmask(vec p0,vec p1,vec p2,vec p3){
+#define vmull_negone(x) vmull_p64(-1ULL,x)
+Zin U mmask(span p){
  const vec bitmask = { 0x01,0x02,0x4,0x8,0x10,0x20,0x40,0x80,0x01,0x02,0x4,0x8,0x10,0x20,0x40,0x80 };
- vec t0=vandq_u8(p0,bitmask),t1=vandq_u8(p1,bitmask),t2=vandq_u8(p2,bitmask),t3=vandq_u8(p3,bitmask),
+ vec t0=vandq_u8(p.i0,bitmask),t1=vandq_u8(p.i1,bitmask),t2=vandq_u8(p.i2,bitmask),t3=vandq_u8(p.i3,bitmask),
  sum0=vpaddq_u8(t0,t1),sum1=vpaddq_u8(t2,t3);sum0=vpaddq_u8(sum0,sum1);sum0=vpaddq_u8(sum0,sum0);
  R vgetq_lane_u64(vreinterpretq_u64_u8(sum0),0);}
 #endif

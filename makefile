@@ -22,12 +22,6 @@ else
 endif
 W:=$W -Wno-unused-value -Wno-int-conversion -Wno-parentheses -w
 
-ifeq ($(shell uname),Linux)
- ifeq ($(shell grep avx2 /proc/cpuinfo),)
-  CFLAGS:=$(CFLAGS) -DSIMPLE_TOK
- endif
-endif
-
 C=$(CC) $(CFLAGS) -g $W
 
 SRC=*.c *.h makefile
